@@ -23,6 +23,11 @@ type
 var
   CCDBS : TCCDBS;
 
+const
+  EXTERNAL_DEV_NONE : TGetExButtonStatesFunction = nil;
+  EXTERNAL_DEV_CEDRUS : TGetExButtonStatesFunction = nil;
+  EXTERNAL_DEV_SYS_KEYBOARD : TGetExButtonStatesFunction = nil;
+
 implementation
 
 function RGB(red, green, blue, alpha: Uint8): TSDL_Color;
@@ -41,11 +46,14 @@ end;
 
 procedure Flip(x: PSDL_Surface);
 begin
-{$IFDEF SDL}
-  {$IFNDEF WIN64}
-    while (SDL_FlipEx(x) < 0) do ;
-  {$ELSE}
-    while (SDL_Flip(x) < 0) do ;
-  {$ENDIF}
+{$IFNDEF WIN64}
+  while (SDL_FlipEx(x) < 0) do ;
+{$ELSE}
+  while (SDL_Flip(x) < 0) do ;
 {$ENDIF}
 end;
+
+initialization
+  EXTERNAL_DEV_NONE := TGetExButtonStatesFunction(Pointer(0));
+  EXTERNAL_DEV_CEDRUS := TGetExButtonStatesFunction(Pointer(1));
+  EXTERNAL_DEV_SYS_KEYBOARD := TGetExButtonStatesFunction(Pointer(2));
