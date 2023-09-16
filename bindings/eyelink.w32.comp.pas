@@ -21,7 +21,7 @@ uses
 
 const
 {$IFDEF Windows}
-  {$IFDEF CPUX86}
+  {$IFDEF Win32}
     EYELINK_DLL_NAME = 'eyelink_w32_comp.dll';
   {$ELSE}
     EYELINK_DLL_NAME = 'eyelink_w32_comp64.dll';

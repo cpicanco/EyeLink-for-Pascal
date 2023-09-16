@@ -3,7 +3,7 @@
   Copyright (C) 2023 Carlos Rafael Fernandes Picanço.
   MIT License
 }
-procedure Flip(x: PSDL_Surface);
+{$IFDEF SDL} procedure Flip(x: PSDL_Surface);{$ENDIF}
 function RGB(red, green, blue, alpha : Uint8) : TSDL_Color;
 function SDLRGB(x: PSDL_Surface; y: TSDL_Color): Uint32;
 
@@ -46,10 +46,12 @@ end;
 
 procedure Flip(x: PSDL_Surface);
 begin
-{$IFNDEF WIN64}
-  while (SDL_FlipEx(x) < 0) do ;
-{$ELSE}
-  while (SDL_Flip(x) < 0) do ;
+{$IFDEF SDL}
+  {$IFDEF WIN32}
+    while (SDL_FlipEx(x) < 0) do ;
+  {$ELSE}
+    while (SDL_Flip(x) < 0) do ;
+  {$ENDIF}
 {$ENDIF}
 end;
 

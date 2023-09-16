@@ -7,9 +7,9 @@
 // see https://www.freepascal.org/docs-html/prog/progse22.html
 {$MACRO ON}
 
-{$IFDEF CPUX64}
+{$IFDEF Win64}
   {$ALIGN 16}
-{$ELSEIF CPUX32}
+{$ELSEIF Win32}
   {$ALIGN 8}
 {$ENDIF}
 
@@ -20,11 +20,5 @@
 {$ENDIF}
 
 {$ifndef ELCALLTYPE}
-  {$IFDEF Windows}
-    {$DEFINE ELCALLTYPE := stdcall;}
-  {$ELSEIF Linux}
-    {$DEFINE ELCALLTYPE := cdecl;}
-  {$ELSE}
-    {$DEFINE ELCALLTYPE := cdecl;}
-  {$ENDIF}
+  {$DEFINE ELCALLTYPE := winapi;}
 {$endif}

@@ -15,16 +15,12 @@ interface
   {$ERROR sdl should not be used with sdl2_expt.h}
 {$ENDIF}
 
-{$IFNDEF SDL2}
-  {$DEFINE SDL2}
-{$ENDIF}
-
 uses
   SDL2, eyelink.core.expt;
 
 const
   {$IFDEF Windows}
-    {$IFDEF CPUX86}
+    {$IFDEF Win32}
       EYELINK_DLL_NAME = 'eyelink_core_graphics_sdl2.dll';
     {$ELSE}
       EYELINK_DLL_NAME = 'eyelink_core_graphics_sdl2x64.dll';

@@ -19,7 +19,7 @@ const
 
 
 {$IFDEF Windows}
-  {$IFDEF CPU32BITS}
+  {$IFDEF Win32}
     EYELINK_DLL_NAME = 'eyelink_core.dll';
   {$ELSE}
     EYELINK_DLL_NAME = 'eyelink_core64.dll';

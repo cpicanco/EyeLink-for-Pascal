@@ -51,7 +51,7 @@ uses Dialogs
   , eyelink.core
   , eyelink.core.expt
   , eyelink.sdl2.expt
-  //, eyelink.classes.hook
+  , eyelink.classes.hook
   ;
 
 { TEyeLink }
