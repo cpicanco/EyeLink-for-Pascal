@@ -65,9 +65,9 @@ type
   function echo_key: UINT16; ELCALLTYPE ELDLL
   function getkey: UINT16; ELCALLTYPE ELDLL
   function getkey_with_mod(unicode: PUINT16): UINT32; ELCALLTYPE ELDLL
-  function eyecmd_printf(const fmt: PAnsiChar; Args: array of const): INT16; varargs; ELCALLTYPE ELDLL
-  function eyemsg_printf(const fmt: PAnsiChar; Args: array of const): INT16; varargs; ELCALLTYPE ELDLL
-  function eyemsg_printf_ex(exectime: UINT32; const fmt: PAnsiChar; Args: array of const): INT16; varargs; ELCALLTYPE ELDLL
+  function eyecmd_printf(const fmt: PAnsiChar): INT16; varargs; ELCALLTYPE ELDLL
+  function eyemsg_printf(const fmt: PAnsiChar): INT16; varargs; ELCALLTYPE ELDLL
+  function eyemsg_printf_ex(exectime: UINT32; const fmt: PAnsiChar): INT16; varargs; ELCALLTYPE ELDLL
 
   const
     DONE_TRIAL = 0;
@@ -88,7 +88,7 @@ type
   function do_drift_correctf(x, y: FLOAT; draw, allow_setup: INT16): INT16; ELCALLTYPE ELDLL
   function target_mode_display: INT16; ELCALLTYPE ELDLL
   function image_mode_display: INT16; ELCALLTYPE ELDLL
-  procedure alert_printf(fmt: PAnsiChar; Args: array of const); varargs; ELCALLTYPE ELDLL
+  procedure alert_printf(fmt: PAnsiChar); varargs; ELCALLTYPE ELDLL
   function receive_data_file(src, dest: PAnsiChar; dest_is_path: INT16): INT32; ELCALLTYPE ELDLL
   function receive_data_file_feedback(src, dest: PAnsiChar; dest_is_path: INT16; progress: TEyeLinkSendReceiveProcedure): INT32; ELCALLTYPE ELDLL
   function receive_data_file_feedback_v2(src, dest: PAnsiChar; dest_is_path: INT16; progress: TEyeLinkSendReceiveProcedure): INT32; ELCALLTYPE ELDLL

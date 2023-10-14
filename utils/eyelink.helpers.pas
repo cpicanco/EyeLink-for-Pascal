@@ -12,8 +12,9 @@ unit eyelink.helpers;
 interface
 
 uses
-  Classes, SysUtils
+  Classes, SysUtils;
 
+type
   { TEyeLinkStringHelper }
 
   TEyeLinkStringHelper = type helper(TStringHelper) for string
