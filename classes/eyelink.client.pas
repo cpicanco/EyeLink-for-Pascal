@@ -3,7 +3,7 @@
   Copyright (C) 2023 Carlos Rafael Fernandes Picanço.
   MIT License
 }
-unit eyelink.classes;
+unit eyelink.client;
 
 {$mode ObjFPC}{$H+}
 
@@ -12,15 +12,18 @@ interface
 uses
   Classes, SysUtils, sdl.app
   , eyelink.core.expt
+  , eyelink.data
   ;
 
 type
 
   TELConnection = (elcDLL, elcDevice, elcMock);
 
-  { TEyeLink }
+  TAllDataEvent = procedure (Sender : TObject; AALLF_DATA : array of ALLF_DATA);
 
-  TEyeLink = class(TComponent)
+  { TEyeLinkClient }
+
+  TEyeLinkClient = class(TThread)
   private
     FDisplay : DISPLAYINFO;
     FEyeLinkVersion : integer;
@@ -28,6 +31,7 @@ type
     FDataFilename : string;
     FHostApp: TSDLApplication;
     FHostProgramName: string;
+    FOnAllDataEvent: TAllDataEvent;
     FOutputFolder : string;
     //FCalibration : TEyeLinkCalibration;
     function Connect(ELConnection: TELConnection) : Int16;
@@ -35,8 +39,12 @@ type
     function GetConnected: Boolean;
     procedure SetConnected(AValue: Boolean);
     procedure SetHostApp(AValue: TSDLApplication);
+    procedure SetOnAllDataEvent(AValue: TAllDataEvent);
+    procedure SetOutputFolder(AValue: string);
+  protected
+    procedure Execute; override;
   public
-    constructor Create(AOwner : TComponent); override;
+    constructor Create;
     destructor Destroy; override;
     procedure InitializeLibrary;
     procedure InitializeLibraryAndConnectToDevice;
@@ -44,12 +52,17 @@ type
     procedure InitializeCustomExperimentGraphics;
     procedure CloseExperimentGraphics;
     procedure DoTrackerSetup;
+    procedure ExitCalibration;
     procedure SetupGraphicHook;
     procedure Abort;
-    procedure DataOpenFile;
-    procedure DataRecordingStart;
-    procedure DataRecordingStop;
-    procedure DataReceiveFile;
+    procedure OpenDataFile;
+    procedure ReceiveDataFile;
+    procedure StartDataRecording;
+    procedure StopDataRecording;
+    procedure Disconnect;
+    procedure StartRealTime;
+    procedure StopRealtime;
+
     //record_abort_hide_hook: TEyeLinkHookProcedure;
     //setup_image_display_hook: TEyeLinkHookSetupImageDisplayFunction;
     //image_title_hook: TEyeLinkHookImageTitleProcedure;
@@ -60,6 +73,8 @@ type
     //alert_printf_hook: TEyeLinkHookAlertProcedure;
     property Connected : Boolean read GetConnected write SetConnected;
     property HostApp : TSDLApplication read FHostApp write SetHostApp;
+    property OutputFolder : string read FOutputFolder write SetOutputFolder;
+    property OnAllDataEvent : TAllDataEvent read FOnAllDataEvent write SetOnAllDataEvent;
   end;
 
 implementation
@@ -84,27 +99,28 @@ const
   // dummy connection for simulation;
   EL_INITIALIZE_MOCK_CONNECTION = 1;
 
-{ TEyeLink }
+{ TEyeLinkClient }
 
-constructor TEyeLink.Create(AOwner: TComponent);
+constructor TEyeLinkClient.Create;
 begin
-  inherited Create(AOwner);
-  FDataFilename := 'TEST.EDF';
+  inherited Create(True);
+  FDataFilename := 'LAST.EDF';
   FOutputFolder := 'c:\data\';
 end;
 
-destructor TEyeLink.Destroy;
+destructor TEyeLinkClient.Destroy;
 begin
-  close_eyelink_connection;
+  Disconnect;
+  close_eyelink_system;
   inherited Destroy;
 end;
 
-procedure TEyeLink.InitializeLibrary;
+procedure TEyeLinkClient.InitializeLibrary;
 begin
   Connect(elcDLL);
 end;
 
-procedure TEyeLink.InitializeLibraryAndConnectToDevice;
+procedure TEyeLinkClient.InitializeLibraryAndConnectToDevice;
 var
   LVersionString : array [0..49] of Char;
 begin
@@ -120,12 +136,12 @@ begin
   end;
 end;
 
-procedure TEyeLink.InitializeLibraryAndConnectToMockDevice;
+procedure TEyeLinkClient.InitializeLibraryAndConnectToMockDevice;
 begin
   Connect(elcMock);
 end;
 
-function TEyeLink.Connect(ELConnection: TELConnection) : Int16;
+function TEyeLinkClient.Connect(ELConnection: TELConnection) : Int16;
 begin
   // defaults to 100.1.1.1
   // set_eyelink_address("100.1.1.7") for ip is different from default
@@ -139,48 +155,72 @@ begin
   end;
 end;
 
-function TEyeLink.DataFilenameIsValid: Boolean;
+function TEyeLinkClient.DataFilenameIsValid: Boolean;
 begin
   Result := True;
 end;
 
-function TEyeLink.GetConnected: Boolean;
+function TEyeLinkClient.GetConnected: Boolean;
 begin
   Result := eyelink_is_connected() > 0;
 end;
 
-procedure TEyeLink.SetConnected(AValue: Boolean);
+procedure TEyeLinkClient.SetConnected(AValue: Boolean);
 begin
-
+  // todo: must use Connect, Disconnect now
 end;
 
-procedure TEyeLink.SetHostApp(AValue: TSDLApplication);
+procedure TEyeLinkClient.SetHostApp(AValue: TSDLApplication);
 begin
   if FHostApp = AValue then Exit;
   FHostApp := AValue;
 end;
 
-procedure TEyeLink.InitializeCustomExperimentGraphics;
+procedure TEyeLinkClient.SetOnAllDataEvent(AValue: TAllDataEvent);
+begin
+  if FOnAllDataEvent = AValue then Exit;
+  FOnAllDataEvent := AValue;
+end;
+
+procedure TEyeLinkClient.SetOutputFolder(AValue: string);
+begin
+  if FOutputFolder = AValue then Exit;
+  FOutputFolder := AValue;
+end;
+
+procedure TEyeLinkClient.Execute;
+var
+  LAllData : array of ALLF_DATA;
+begin
+  // wait for data
+  while not Terminated do begin
+    if eyelink_wait_for_next_data(@LAllData, 5, SizeOf(UInt32)) > 0 then begin
+      FOnAllDataEvent(Self, LAllData);
+    end;
+  end;
+end;
+
+procedure TEyeLinkClient.InitializeCustomExperimentGraphics;
 begin
   //eyelink_set_tracker_setup_default(0);
   //eyelink_start_setup;
 
 end;
 
-procedure TEyeLink.CloseExperimentGraphics;
+procedure TEyeLinkClient.CloseExperimentGraphics;
 begin
   close_expt_graphics;
 end;
 
-procedure TEyeLink.DoTrackerSetup;
+procedure TEyeLinkClient.DoTrackerSetup;
 var
   //empty    : PChar = '';
   //ontarget : PChar = '';
   //ongood   : PChar = 'off';
   //onbad    : PChar = 'off';
-  //
-  //i  : integer;
-  //j : integer;
+
+  i : integer;
+  j : integer;
   LWindow : PSDL_Window;
 begin
 	FDisplay.width := FHostApp.Monitor.w;
@@ -192,16 +232,19 @@ begin
   if init_expt_window(LWindow, @FDisplay) = -1 then
     raise Exception.Create('init_expt_window failed');
 
-  //i := display.Width div 60; // Selects best size for calibration target
-  //j := display.Width div 300; // Selects size for focal spot in target
-  //if(j < 2) then j := 2;
+  i := FDisplay.Width div 60; // Selects best size for calibration target
+  j := FDisplay.Width div 300; // Selects size for focal spot in target
+  if(j < 2) then j := 2;
 
   // Sets diameter of target and of hole in middle of target
-  //set_target_size(i, j);
+  set_target_size(i, j);
+
   // Sets target color and display background color
   set_calibration_colors(@clBlack, @clWhite);
+
   // Sets sounds for Setup menu (calibration, validation)
   //set_cal_sounds(empty, empty, empty);
+
   // Sets sounds for drift correction
   //set_dcorr_sounds(ontarget, ongood, onbad);
 
@@ -213,19 +256,24 @@ begin
   //eyelink_start_setup;
 end;
 
-procedure TEyeLink.SetupGraphicHook;
+procedure TEyeLinkClient.ExitCalibration;
+begin
+  exit_calibration;
+end;
+
+procedure TEyeLinkClient.SetupGraphicHook;
 begin
   //setup_graphic_hook_functions(@EyeLinkHook);
 end;
 
-procedure TEyeLink.Abort;
+procedure TEyeLinkClient.Abort;
 var
-  s1 : PAnsiChar = 'test.edf';
+  s1 : PAnsiChar = 'LAST.EDF';
 begin
 
 end;
 
-procedure TEyeLink.DataOpenFile;
+procedure TEyeLinkClient.OpenDataFile;
 var
   Monitor : TSDL_Rect;
   function HasHorizontalTarget : string;
@@ -252,8 +300,8 @@ begin
 
 	eyecmd_printf('screen_pixel_coords = %ld %ld %ld %ld',
 				 Monitor.x, Monitor.y, Monitor.w, Monitor.h);
-	eyecmd_printf('sample_rate = 1000');					  // Set the intended sampling rate
-	eyecmd_printf('calibration_type = HV13');                  // Setup calibration type
+	eyecmd_printf('sample_rate = 1000');      // Set the intended sampling rate
+	eyecmd_printf('calibration_type = HV13'); // Setup calibration type
 
 	eyemsg_printf('DISPLAY_COORDS %ld %ld %ld %ld',
 				 Monitor.x, Monitor.y, Monitor.w, Monitor.h);
@@ -291,23 +339,44 @@ begin
 	eyecmd_printf('button_function 5 ''accept_target_fixation''');
 end;
 
-procedure TEyeLink.DataRecordingStart;
+procedure TEyeLinkClient.StartDataRecording;
 begin
-  //start_recording
+  // Start data recording to EDF file, BEFORE DISPLAYING STIMULUS
+  // You should always start recording 50-100 msec before required
+  // otherwise you may lose a few msec of data
+  start_recording(1, 1, 1, 1);
+  pump_delay(100);
 end;
 
-procedure TEyeLink.DataRecordingStop;
+procedure TEyeLinkClient.StopDataRecording;
 begin
-
+  pump_delay(100);
+  stop_recording;
+  close_data_file;
 end;
 
-procedure TEyeLink.DataReceiveFile;
+procedure TEyeLinkClient.Disconnect;
 begin
-  //set_offline_mode(); // set offline mode so we can transfer file
-  //pump_delay(1000); // delay so tracker is ready
-  //eyecmd_printf('close_data_file');
-  //if break_pressed()
+  if Connected then begin
+    set_offline_mode;         // Places EyeLink tracker in off-line (idle) mode
+    close_data_file;          // Close Data file, if any
+    close_eyelink_connection; // Close
+  end;
+end;
 
+procedure TEyeLinkClient.StartRealTime;
+begin
+  begin_realtime_mode(100);
+end;
+
+procedure TEyeLinkClient.StopRealtime;
+begin
+  end_realtime_mode;
+end;
+
+procedure TEyeLinkClient.ReceiveDataFile;
+begin
+  StopDataRecording;
   // make sure we created a file
   if Connected and DataFilenameIsValid then begin
 

@@ -153,26 +153,26 @@ type
 
   PFEVENT = ^FEVENT;
   FEVENT = record
-    time: UINT32;
-    &type: INT16;
+    time: UINT32; {effective time of event}
+    &type: INT16; {event type}
     read: UINT16;
-    eye: INT16;
+    eye: INT16;   {eye: 0=left,1=right}
     sttime: UINT32;
     entime: UINT32;
     hstx: float;
     hsty: float;
-    gstx: float;
-    gsty: float;
+    gstx: float; {starting point x}
+    gsty: float; {starting point y}
     sta: float;
     henx: float;
     heny: float;
-    genx: float;
-    geny: float;
+    genx: float; {ending point x}
+    geny: float; {ending point y}
     ena: float;
     havx: float;
     havy: float;
-    gavx: float;
-    gavy: float;
+    gavx: float; {average x}
+    gavy: float; {average y}
     ava: float;
     avel: float;
     pvel: float;

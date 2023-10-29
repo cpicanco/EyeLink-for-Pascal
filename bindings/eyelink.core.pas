@@ -70,6 +70,37 @@ function eyelink_broadcast_open: INT16; ELCALLTYPE ELDLL
 function eyelink_dummy_open: INT16; ELCALLTYPE ELDLL
 function eyelink_close(send_msg: INT16): INT16; ELCALLTYPE ELDLL
 function eyelink_reset_clock(enable: INT16): INT16; ELCALLTYPE ELDLL
+
+{
+Checks whether the connection to the tracker is alive.
+
+Remarks
+  Call this routine during loops and wherever the experiment might lock up if
+  the tracker is shut down. Exit the experiment (by terminating loops and
+  returning from all calls) if this returns 0.
+
+Returns
+  0   if link closed.
+ -1   if simulating connection.
+  1   for normal connection.
+  2   for broadcast connection (NEW for v2.1 and later).
+
+Example:
+
+  // This program illustrates the use of eyelink_is_connected()
+  // when performing a pre-trial drift correction
+  #include <eyelink.h>
+  while(1)
+  {
+  // Checks link often so we can exit if tracker stopped
+  if(!eyelink_is_connected())
+  return ABORT_EXPT;
+  // Performs drift correction with target drawn in the center
+  error = do_drift_correct(SCRWIDTH/2, SCRHEIGHT/2, 1, 1);
+  // repeat if ESC was pressed to access Setup menu
+  if(error!=27) break;
+  }
+}
 function eyelink_is_connected: INT16; ELCALLTYPE ELDLL
 function eyelink_quiet_mode(mode: INT16): INT16; ELCALLTYPE ELDLL
 function eyelink_poll_trackers: INT16; ELCALLTYPE ELDLL
