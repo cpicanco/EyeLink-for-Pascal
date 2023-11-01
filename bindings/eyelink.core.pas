@@ -9,6 +9,13 @@ unit eyelink.core;
 
 {$I eyelink_calltype}
 
+{$IFDEF EYELINK_STATIC_LINK}
+  {$IFDEF Linux}
+    {$LINKLIB eyelink_core}
+  {$ENDIF}
+{$ENDIF}
+
+
 interface
 
 uses eyelink.data, eyelink.types;
@@ -27,7 +34,9 @@ const
 {$ENDIF}
 
 {$IFDEF Linux}
+  {$IFNDEF EYELINK_STATIC_LINK}
   EYELINK_DLL_NAME = 'eyelink_core.so';
+  {$ENDIF}
 {$ENDIF}
 
 

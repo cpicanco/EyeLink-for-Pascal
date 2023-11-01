@@ -7,9 +7,10 @@
 // see https://www.freepascal.org/docs-html/prog/progse22.html
 {$MACRO ON}
 
-{$IFDEF Win64}
+{$IFDEF CPU64}
   {$ALIGN 16}
-{$ELSEIF Win32}
+{$ENDIF}
+{$IFDEF CPU32}
   {$ALIGN 8}
 {$ENDIF}
 

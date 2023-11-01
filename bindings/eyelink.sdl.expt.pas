@@ -27,7 +27,7 @@ const
 {$ENDIF}
 
 {$IFDEF Linux}
-  EYELINK_DLL_NAME = 'eyelink_core_graphics64.so';
+  EYELINK_DLL_NAME = 'eyelink_core_graphics.so';
 {$ENDIF}
 
 

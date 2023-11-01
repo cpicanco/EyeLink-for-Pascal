@@ -15,6 +15,12 @@ interface
   {$ERROR sdl should not be used with sdl2_expt.h}
 {$ENDIF}
 
+{$IFDEF EYELINK_STATIC_LINK}
+  {$IFDEF Linux}
+    {$LINKLIB eyelink_core_graphics_sdl2}
+  {$ENDIF}
+{$ENDIF}
+
 uses
   SDL2, eyelink.core.expt;
 
@@ -28,8 +34,11 @@ const
   {$ENDIF}
 
   {$IFDEF Linux}
-    EYELINK_DLL_NAME = 'eyelink_core_graphics_sdl2x64.so';
+    {$IFNDEF EYELINK_STATIC_LINK}
+    EYELINK_DLL_NAME = 'eyelink_core_graphics_sdl2.so';
+    {$ENDIF}
   {$ENDIF}
+
 
 var
   SCREEN_LEFT: Integer = 0;
