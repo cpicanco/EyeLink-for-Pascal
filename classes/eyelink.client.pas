@@ -19,7 +19,7 @@ type
 
   TELConnection = (elcDLL, elcDevice, elcMock);
 
-  TAllDataEvent = procedure (Sender : TObject; AALLF_DATA : array of ALLF_DATA);
+  TAllDataEvent = procedure (Sender : TObject; APALLF_DATA : PALLF_DATA) of object;
 
   { TEyeLinkClient }
 
@@ -39,7 +39,6 @@ type
     function GetConnected: Boolean;
     procedure SetConnected(AValue: Boolean);
     procedure SetHostApp(AValue: TSDLApplication);
-    procedure SetOnAllDataEvent(AValue: TAllDataEvent);
     procedure SetOutputFolder(AValue: string);
   protected
     procedure Execute; override;
@@ -74,7 +73,7 @@ type
     property Connected : Boolean read GetConnected write SetConnected;
     property HostApp : TSDLApplication read FHostApp write SetHostApp;
     property OutputFolder : string read FOutputFolder write SetOutputFolder;
-    property OnAllDataEvent : TAllDataEvent read FOnAllDataEvent write SetOnAllDataEvent;
+    property OnAllDataEvent : TAllDataEvent read FOnAllDataEvent write FOnAllDataEvent;
   end;
 
 implementation
@@ -176,12 +175,6 @@ begin
   FHostApp := AValue;
 end;
 
-procedure TEyeLinkClient.SetOnAllDataEvent(AValue: TAllDataEvent);
-begin
-  if FOnAllDataEvent = AValue then Exit;
-  FOnAllDataEvent := AValue;
-end;
-
 procedure TEyeLinkClient.SetOutputFolder(AValue: string);
 begin
   if FOutputFolder = AValue then Exit;
@@ -190,12 +183,12 @@ end;
 
 procedure TEyeLinkClient.Execute;
 var
-  LAllData : array of ALLF_DATA;
+  LAllFData : PALLF_DATA;
 begin
   // wait for data
   while not Terminated do begin
-    if eyelink_wait_for_next_data(@LAllData, 5, SizeOf(UInt32)) > 0 then begin
-      FOnAllDataEvent(Self, LAllData);
+    if eyelink_wait_for_next_data(@LAllFData, 5, SizeOf(UInt32)) > 0 then begin
+      FOnAllDataEvent(Self, LAllFData);
     end;
   end;
 end;
